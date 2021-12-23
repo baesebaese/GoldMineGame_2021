@@ -1,4 +1,7 @@
-# 집게를 좌우로 이동시키기
+# 집게발사
+# 현재 위치로부터 집게를 뻗는 동작
+# 화면 밖으로 뻗어나가면 다시 돌아오도록 처리
+# 뻗을 때 속도, 돌아올 때 속도 적용
 
 import pygame
 import os
@@ -19,7 +22,7 @@ class Claw(pygame.sprite.Sprite):
         self.angle = 10 # 최초 각도 정의 (오른쪽 끝)
 
 
-    def update(self):
+    def update(self, to_x):
         if self.direction == LEFT: # 왼쪽으로 이동중이면
             self.angle += self.angle_speed # 이동 속도만큼 각도 증가
         elif self.direction == RIGHT:
@@ -28,27 +31,30 @@ class Claw(pygame.sprite.Sprite):
         # 만약에 허용 각도 범위를 벗어나면?
         if self.angle > 170:
             self.angle = 170
-            self.direction = RIGHT
+            self.set_direction(RIGHT)
         elif self.angle < 10:
             self.angle = 10
-            self.direction = LEFT
+            self.set_direction(LEFT)
 
+        self.offset.x += to_x
         self.rotate() # 회전 처리
-
-        # rect_center = self.position + self.offset
-        # self.rect = self.image.get_rect(center=rect_center)
 
     def rotate(self):
         self.image = pygame.transform.rotozoom(self.original_image, -self.angle, 1) # 회전 대상 이미지, 회전 각도, 이미지 크기(scale)
-
         offset_rotated = self.offset.rotate(self.angle)
         self.rect = self.image.get_rect(center=self.position+offset_rotated)
-        pygame.draw.rect(screen, RED, self.rect, 1)
+ 
+    def set_direction(self, direction): 
+        self.direction = direction
 
     def draw(self, screen):
         screen.blit(self.image, (self.rect))
-        pygame.draw.circle(screen, RED, self.position, 3) # 중심점 표시
         pygame.draw.line(screen, BLACK, self.position, self.rect.center, 5) # 직선 그리기
+
+    def set_init_state(self):
+        self.offset.x = default_offset_x_claw
+        self.angle = 10
+        self.direction = LEFT
 
 # 보석 클래스
 class Gemstone(pygame.sprite.Sprite):
@@ -80,7 +86,15 @@ clock = pygame.time.Clock()
 
 # 게임 관련 변수
 default_offset_x_claw = 40 # 중심점으로부터 집게까지의 x거리
+to_x = 0 # x 좌표 기준으로 집게 이미지를 이동시킬 값 저장 변수
+
+# 속도 변수
+move_speed = 12 # 발사할 때 이동 스피드 (x 좌표 기준으로 증가하는 값)
+return_speed = 20 # 돌아올 때 스피드
+
+# 방향 변수
 LEFT = -1 # 왼쪽 방향
+STOP = 0 # 이동방향이 좌우가 아닌 고정인 상태(집게를 뻗음)
 RIGHT = 1 # 오른쪽 방향
 
 # 색깔 변수
@@ -114,11 +128,22 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        
+        if event.type == pygame.MOUSEBUTTONDOWN: # 마우스 클릭 시 집게를 뻗음
+                claw.set_direction(STOP)
+                to_x = move_speed 
+
+    if claw.rect.left < 0 or claw.rect.right > screen_width or claw.rect.bottom > screen_hight:
+        to_x = -return_speed
     
+    if claw.offset.x < default_offset_x_claw:
+        to_x = 0
+        claw.set_init_state()
+
     screen.blit(background, (0, 0))
 
     gemstone_group.draw(screen) # 그룹 내 모든 스프라이트를 스크린에 그림
-    claw.update()
+    claw.update(to_x)
     claw.draw(screen)
 
     pygame.display.update()
