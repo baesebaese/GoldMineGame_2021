@@ -1,4 +1,4 @@
-#충돌처리
+#충돌처리 mask
 
 import pygame
 import os
@@ -121,10 +121,10 @@ background = pygame.image.load(os.path.join(current_path, "background.png"))
 
 # 4개 보석 이미지 불러오기 (작은 금, 큰 금, 돌, 다이아몬드)
 gemstone_images = [
-    pygame.image.load(os.path.join(current_path, "small_gold.png")), # 작은 금
-    pygame.image.load(os.path.join(current_path, "big_gold.png")), # 큰 금
-    pygame.image.load(os.path.join(current_path, "stone.png")), # 돌
-    pygame.image.load(os.path.join(current_path, "diamond.png")) # 다이아몬드
+    pygame.image.load(os.path.join(current_path, "small_gold.png")).convert_alpha(), # 작은 금
+    pygame.image.load(os.path.join(current_path, "big_gold.png")).convert_alpha(), # 큰 금
+    pygame.image.load(os.path.join(current_path, "stone.png")).convert_alpha(), # 돌
+    pygame.image.load(os.path.join(current_path, "diamond.png")).convert_alpha() # 다이아몬드
 ]
 
 # 보석 그룹
@@ -161,7 +161,8 @@ while running:
 
     if not caught_gemstone: # 잡힌 보석이 없다면 충돌 체크
         for gemstone in gemstone_group:
-            if claw.rect.colliderect(gemstone.rect):
+          #  if claw.rect.colliderect(gemstone.rect): # 직사강형 기준으로 충돌 처리
+          if pygame.sprite.collide_mask(claw, gemstone) : # 투명 영역은 제외하고 실제 이미지 영역에 충돌 처리
                 caught_gemstone = gemstone # 잡힌 보석
                 to_x = -gemstone.speed # 잡힌 보석의 속도에 - 한 값을 이동 속도로 설정
                 break
